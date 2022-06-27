@@ -30,7 +30,7 @@ fn main() {
     };
 
     // Create container for the individual letters
-    let container: Vec<char> = Vec::with_capacity(word.len());
+    let mut container: Vec<char> = vec!['.'; word.len() - 1];
 
     // Debug
     println!("The word is {word}");
@@ -60,8 +60,28 @@ fn main() {
             }
             Err(_) => continue,
         };
-        println!("{input}");
-        break;
+
+        // Check if input is in the word
+        if !word.contains(input) {
+            println!("This character is not in the word. Guess again!");
+            // print current word and guesses
+            show_state(&mut container);
+            continue;
+        } else {
+            println!("This character is in the word!");
+            // update container
+            for (idx, val) in word.chars().enumerate() {
+                if input == val {
+                    container.insert(idx, val);
+                    container.remove(idx + 1);
+                }
+            }
+            // print updated word
+            show_state(&mut container);
+        }
+        if !container.contains(&'.') {
+            break;
+        }
     }
 }
 
@@ -69,7 +89,11 @@ fn main() {
 ///
 /// TODO:
 ///
-/// ~ Use difficulty measure to provide different types of words (length, number of different characters)
+/// ~ Use difficulty measure to provide different types of words (length, number of different characters).
+///
+/// ~ Use Vec.choose instead of get.
+///
+/// ~ Clean up this mess.
 fn pick_word() -> Result<String, Box<dyn Error>> {
     let whole_list = fs::read_to_string("data/words.txt")?;
     let word_vec = whole_list.split('\n').collect::<Vec<&str>>();
@@ -80,4 +104,15 @@ fn pick_word() -> Result<String, Box<dyn Error>> {
         None => panic!(),
     };
     Ok(word.to_string())
+}
+
+/// Given container of current state of the game print the word and guesses
+///
+fn show_state(container: &mut Vec<char>) {
+    //}, guesses: &Vec<char>) {
+    let mut result = String::new();
+    for &el in container.clone().iter() {
+        result.push(el)
+    }
+    println!("{}", result)
 }
