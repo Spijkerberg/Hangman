@@ -1,14 +1,14 @@
 // Ideas
 /*
 - at first ask for difficulty ~ number of letters in word
-&-
+
 */
 
 use rand::seq::SliceRandom;
 use std::{error::Error, fs, io};
 
 fn main() {
-    println!("Welcome to Hangman!\nBegin by entering a character:");
+    println!("Welcome to Hangman!\n");
 
     // start live with 6 lives
     let mut lives: i8 = 6;
@@ -38,7 +38,22 @@ fn main() {
     println!("The word is {word}");
 
     // loop until `death` or win
-    loop {
+    'outer: loop {
+        // check if player should be dead
+        if lives <= 0 {
+            println!("You have lost the game lmao.");
+            break 'outer;
+        }
+
+        // check if player won
+        if !container.contains(&'.') {
+            println!("You guessed the word, you absolute beast!");
+            break 'outer;
+        }
+
+        // show current state of game
+        show_state(&mut container, &mut guesses, &lives);
+
         // get input string from user
         let mut guess = String::new();
         match io::stdin().read_line(&mut guess) {
@@ -57,16 +72,39 @@ fn main() {
                     input
                 } else {
                     println!("Please enter an alphabetical char!");
-                    continue;
+                    continue 'outer;
                 }
             }
-            Err(_) => continue,
+            Err(_) => continue 'outer,
         };
 
         // update guesses
         if guesses.contains(&input) {
-            println!("You have already tried this character.");
-            continue;
+            'inner: loop {
+                println!("Are you absolutely sure that you want to waste a part of you on a character that you have already tried? (Y/N)");
+                let mut guess = String::new();
+                match io::stdin().read_line(&mut guess) {
+                    Ok(n) => {
+                        if n != 3 {
+                            println!("Please enter a single char!")
+                        }
+                    }
+                    Err(e) => println!("Got error {e} while reading the line."),
+                }
+                if guess.to_lowercase().contains('y') {
+                    println!("So be it, you shall lose a limb.");
+                    lives -= 1;
+                    // show_state(&mut container, &mut guesses, &lives);
+                    continue 'outer;
+                } else if guess.to_lowercase().contains('n') {
+                    println!("You shall be rewarded with mercy.");
+                    // show_state(&mut container, &mut guesses, &lives);
+                    continue 'outer;
+                } else {
+                    println!("You what?");
+                    continue 'inner;
+                }
+            }
         } else {
             guesses.push(input);
         }
@@ -75,8 +113,8 @@ fn main() {
             println!("This character is not in the word. Guess again!");
             lives -= 1;
             // print current word and guesses
-            show_state(&mut container, &mut guesses, &lives);
-            continue;
+            // show_state(&mut container, &mut guesses, &lives);
+            continue 'outer;
         } else {
             // update container
             for (idx, val) in word.chars().enumerate() {
@@ -87,50 +125,8 @@ fn main() {
             }
 
             // print updated word
-            show_state(&mut container, &mut guesses, &lives);
+            // show_state(&mut container, &mut guesses, &lives);
         }
-
-        // check if player should be dead
-        if lives < 0 {
-            println!("You have lost the game lmao.");
-            break;
-        }
-
-        if !container.contains(&'.') {
-            println!("You guessed the word, you absolute beast!");
-            break;
-        }
-    }
-}
-
-fn _update_guesses(guesses: &mut Vec<char>, input: char, lives: &mut i8) {
-    // update guesses
-    if guesses.contains(&input) {
-        loop {
-            println!("Are you absolutely sure that you want to waste a part of you on a character that you have already tried? (Y/N)");
-            let mut guess = String::new();
-            match io::stdin().read_line(&mut guess) {
-                Ok(n) => {
-                    if n != 3 {
-                        println!("Please enter a single char!")
-                    }
-                }
-                Err(e) => println!("Got error {e} while reading the line."),
-            }
-            if guess.to_lowercase().contains('y') {
-                println!("So be it, you shall lose a limb.");
-                *lives -= 1;
-                break;
-            } else if guess.to_lowercase().contains('n') {
-                println!("You shall be rewarded with mercy.");
-                break;
-            } else {
-                println!("You what?");
-                continue;
-            }
-        }
-    } else {
-        guesses.push(input);
     }
 }
 
@@ -165,8 +161,9 @@ fn show_state(container: &mut Vec<char>, guesses: &mut Vec<char>, lives: &i8) {
     for &el in guesses.clone().iter() {
         letters.push(el)
     }
-    print!("{}", 27 as char);
     println!("You have {lives} lives!");
     println!("The word is: {}", result);
-    println!("Used letters: {}", letters);
+    if !letters.is_empty() {
+        println!("Used letters: {}", letters)
+    };
 }
